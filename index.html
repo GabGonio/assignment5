@@ -9,7 +9,7 @@
 	<body>
 		<header>
 			<h1>City of Winnipeg 311 Service Request Search</h1>
-			<p>Search recent 311 requests by keyword and optional date.</p>
+			<p>Search recent 311 requests by keyword.</p>
 		</header>
 
 		<main>
@@ -25,11 +25,7 @@
 							required
 							placeholder="Example: pothole"
 						/>
-					</div>
-
-					<div class="form-row">
-						<label for="requestDate">Open Date (optional)</label>
-						<input type="date" id="requestDate" name="requestDate" />
+						<span id="keywordError" class="input-error" aria-live="polite"></span>
 					</div>
 
 					<button type="submit" id="searchButton">Search</button>

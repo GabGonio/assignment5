@@ -66,6 +66,10 @@ button {
 	border: 1px solid var(--border);
 }
 
+input[aria-invalid="true"] {
+	border-color: var(--error);
+}
+
 button {
 	background-color: var(--accent);
 	color: #fff;
@@ -89,6 +93,12 @@ button:disabled {
 }
 
 .error-text {
+	color: var(--error);
+}
+
+.input-error {
+	min-height: 1.1rem;
+	font-size: 0.9rem;
 	color: var(--error);
 }
 

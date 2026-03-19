@@ -3,23 +3,17 @@ const MAX_RESULTS = 25;
 
 const searchForm = document.getElementById("searchForm");
 const keywordInput = document.getElementById("keyword");
-const requestDateInput = document.getElementById("requestDate");
+const keywordError = document.getElementById("keywordError");
 const searchButton = document.getElementById("searchButton");
 const statusMessage = document.getElementById("statusMessage");
 const resultsBody = document.getElementById("resultsBody");
 
-function buildApiUrl(keyword, date) {
+function buildApiUrl(keyword) {
 	const safeKeyword = keyword.replace(/'/g, "''");
 	const whereParts = [
 		`lower(subject) LIKE lower('%${safeKeyword}%')`,
 		"subject IS NOT NULL",
 	];
-
-	if (date) {
-		whereParts.push(
-			`open_date >= '${date}T00:00:00' AND open_date <= '${date}T23:59:59'`
-		);
-	}
 
 	const apiUrl =
 		`${DATASET_ENDPOINT}?` +
@@ -31,8 +25,8 @@ function buildApiUrl(keyword, date) {
 	return encodeURI(apiUrl);
 }
 
-async function fetch311Requests(date, keyword) {
-	const url = buildApiUrl(keyword, date);
+async function fetch311Requests(keyword) {
+	const url = buildApiUrl(keyword);
 	const response = await fetch(url);
 
 	if (!response.ok) {
@@ -45,6 +39,16 @@ async function fetch311Requests(date, keyword) {
 function setStatus(message, isError = false) {
 	statusMessage.textContent = message;
 	statusMessage.classList.toggle("error-text", isError);
+}
+
+function clearKeywordError() {
+	keywordError.textContent = "";
+	keywordInput.setAttribute("aria-invalid", "false");
+}
+
+function showKeywordError(message) {
+	keywordError.textContent = message;
+	keywordInput.setAttribute("aria-invalid", "true");
 }
 
 function formatDate(dateString) {
@@ -61,7 +65,10 @@ function renderRows(rows) {
 
 	if (rows.length === 0) {
 		const emptyRow = document.createElement("tr");
-		emptyRow.innerHTML = '<td colspan="4">No matching requests found.</td>';
+		const emptyCell = document.createElement("td");
+		emptyCell.colSpan = 4;
+		emptyCell.textContent = "No matching requests found.";
+		emptyRow.appendChild(emptyCell);
 		resultsBody.appendChild(emptyRow);
 		return;
 	}
@@ -70,24 +77,41 @@ function renderRows(rows) {
 		const { subject = "N/A", reason = "N/A", open_date = "", case_status = "N/A" } = row;
 		const tr = document.createElement("tr");
 
-		tr.innerHTML = `
-			<td>${subject}</td>
-			<td>${reason}</td>
-			<td>${formatDate(open_date)}</td>
-			<td>${case_status}</td>
-		`;
+		const subjectCell = document.createElement("td");
+		subjectCell.textContent = subject;
+
+		const reasonCell = document.createElement("td");
+		reasonCell.textContent = reason;
+
+		const openDateCell = document.createElement("td");
+		openDateCell.textContent = formatDate(open_date);
+
+		const statusCell = document.createElement("td");
+		statusCell.textContent = case_status;
+
+		tr.appendChild(subjectCell);
+		tr.appendChild(reasonCell);
+		tr.appendChild(openDateCell);
+		tr.appendChild(statusCell);
 
 		resultsBody.appendChild(tr);
 	});
 }
 
+keywordInput.addEventListener("input", () => {
+	if (keywordInput.value.trim()) {
+		clearKeywordError();
+	}
+});
+
 searchForm.addEventListener("submit", async (event) => {
 	event.preventDefault();
 
 	const keyword = keywordInput.value.trim();
-	const selectedDate = requestDateInput.value;
+	clearKeywordError();
 
 	if (!keyword) {
+		showKeywordError("Keyword is required.");
 		setStatus("Please enter a keyword before searching.", true);
 		keywordInput.focus();
 		return;
@@ -97,7 +121,7 @@ searchForm.addEventListener("submit", async (event) => {
 	setStatus("Loading requests...");
 
 	try {
-		const requests = await fetch311Requests(selectedDate, keyword);
+		const requests = await fetch311Requests(keyword);
 		renderRows(requests);
 		setStatus(`Loaded ${requests.length} request(s).`);
 	} catch (error) {
