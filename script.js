@@ -5,7 +5,9 @@ const searchForm = document.getElementById("searchForm");
 const keywordInput = document.getElementById("keyword");
 const keywordError = document.getElementById("keywordError");
 const searchButton = document.getElementById("searchButton");
+const clearButton = document.getElementById("clearButton");
 const statusMessage = document.getElementById("statusMessage");
+const resultsMeta = document.getElementById("resultsMeta");
 const resultsBody = document.getElementById("resultsBody");
 
 function buildApiUrl(keyword) {
@@ -41,6 +43,10 @@ function setStatus(message, isError = false) {
 	statusMessage.classList.toggle("error-text", isError);
 }
 
+function setResultsMeta(message = "") {
+	resultsMeta.textContent = message;
+}
+
 function clearKeywordError() {
 	keywordError.textContent = "";
 	keywordInput.setAttribute("aria-invalid", "false");
@@ -64,6 +70,7 @@ function renderRows(rows) {
 	resultsBody.innerHTML = "";
 
 	if (rows.length === 0) {
+		setResultsMeta("0 results displayed.");
 		const emptyRow = document.createElement("tr");
 		const emptyCell = document.createElement("td");
 		emptyCell.colSpan = 4;
@@ -96,12 +103,27 @@ function renderRows(rows) {
 
 		resultsBody.appendChild(tr);
 	});
+
+	setResultsMeta(`${rows.length} result(s) displayed. Showing most recent first.`);
+}
+
+function clearResults() {
+	resultsBody.innerHTML = "";
+	setResultsMeta("");
+	setStatus("Enter a keyword, then click Search.");
 }
 
 keywordInput.addEventListener("input", () => {
 	if (keywordInput.value.trim()) {
 		clearKeywordError();
 	}
+});
+
+clearButton.addEventListener("click", () => {
+	searchForm.reset();
+	clearKeywordError();
+	clearResults();
+	keywordInput.focus();
 });
 
 searchForm.addEventListener("submit", async (event) => {

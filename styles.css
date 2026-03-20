@@ -49,6 +49,12 @@ form {
 	gap: 0.8rem;
 }
 
+.button-row {
+	display: flex;
+	gap: 0.6rem;
+	flex-wrap: wrap;
+}
+
 .form-row {
 	display: grid;
 	gap: 0.35rem;
@@ -87,6 +93,16 @@ button:disabled {
 	cursor: not-allowed;
 }
 
+.secondary-button {
+	background-color: #e2e8f0;
+	color: var(--ink);
+	border: 1px solid var(--border);
+}
+
+.secondary-button:hover {
+	background-color: #cbd5e1;
+}
+
 #statusMessage {
 	margin-top: 0;
 	font-weight: 500;
@@ -100,6 +116,13 @@ button:disabled {
 	min-height: 1.1rem;
 	font-size: 0.9rem;
 	color: var(--error);
+}
+
+.results-meta {
+	margin-top: -0.4rem;
+	margin-bottom: 0.8rem;
+	font-size: 0.92rem;
+	color: #334155;
 }
 
 .table-wrapper {

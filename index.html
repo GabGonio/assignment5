@@ -28,13 +28,17 @@
 						<span id="keywordError" class="input-error" aria-live="polite"></span>
 					</div>
 
-					<button type="submit" id="searchButton">Search</button>
+					<div class="button-row">
+						<button type="submit" id="searchButton">Search</button>
+						<button type="button" id="clearButton" class="secondary-button">Clear</button>
+					</div>
 				</form>
 			</section>
 
 			<section aria-labelledby="results-heading" class="panel">
 				<h2 id="results-heading">Results</h2>
 				<p id="statusMessage" aria-live="polite">Enter a keyword, then click Search.</p>
+				<p id="resultsMeta" class="results-meta" aria-live="polite"></p>
 				<div class="table-wrapper">
 					<table>
 						<thead>
