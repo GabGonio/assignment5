@@ -1,3 +1,9 @@
+/**
+ * Builds and encodes a SoQL API URL for the 311 dataset filtered by keyword.
+ *
+ * @param {string} keyword - The search term to match against the subject field.
+ * @returns {string} A fully encoded URL ready for use with fetch.
+ */
 function buildApiUrl(keyword) {
 	const DATASET_ENDPOINT = "https://data.winnipeg.ca/resource/u7f6-5326.json";
 	const MAX_RESULTS = 25;
@@ -18,6 +24,13 @@ function buildApiUrl(keyword) {
 	return encodeURI(apiUrl);
 }
 
+/**
+ * Fetches 311 service requests from the City of Winnipeg Open Data API.
+ *
+ * @param {string} keyword - The keyword to search for in request subjects.
+ * @returns {Promise<Object[]>} A promise that resolves to an array of request objects.
+ * @throws {Error} If the HTTP response is not OK.
+ */
 async function fetch311Requests(keyword) {
 	const url = buildApiUrl(keyword);
 	const response = await fetch(url);
@@ -29,26 +42,51 @@ async function fetch311Requests(keyword) {
 	return response.json();
 }
 
+/**
+ * Updates the main status message visible to the user.
+ *
+ * @param {string} message - The message text to display.
+ * @param {boolean} [isError=false] - When true, applies error styling.
+ */
 function setStatus(message, isError = false) {
 	const statusMessage = document.getElementById("statusMessage");
 	statusMessage.textContent = message;
 	statusMessage.classList.toggle("error-text", isError);
 }
 
+/**
+ * Updates the results metadata line shown below the status message.
+ *
+ * @param {string} [message=""] - The metadata text to display.
+ */
 function setResultsMeta(message = "") {
 	document.getElementById("resultsMeta").textContent = message;
 }
 
+/**
+ * Clears the inline validation error for the keyword input field.
+ */
 function clearKeywordError() {
 	document.getElementById("keywordError").textContent = "";
 	document.getElementById("keyword").setAttribute("aria-invalid", "false");
 }
 
+/**
+ * Displays an inline validation error for the keyword input field.
+ *
+ * @param {string} message - The error message to display.
+ */
 function showKeywordError(message) {
 	document.getElementById("keywordError").textContent = message;
 	document.getElementById("keyword").setAttribute("aria-invalid", "true");
 }
 
+/**
+ * Formats an ISO date string into a locale-friendly date.
+ *
+ * @param {string} dateString - An ISO 8601 date string from the API.
+ * @returns {string} A formatted date string, or "N/A" if invalid.
+ */
 function formatDate(dateString) {
 	const parsed = new Date(dateString);
 	if (Number.isNaN(parsed.getTime())) {
@@ -58,6 +96,11 @@ function formatDate(dateString) {
 	return parsed.toLocaleDateString();
 }
 
+/**
+ * Returns the current time formatted as HH:MM:SS.
+ *
+ * @returns {string} The current time as a locale string.
+ */
 function formatTimeNow() {
 	return new Date().toLocaleTimeString([], {
 		hour: "2-digit",
@@ -66,6 +109,13 @@ function formatTimeNow() {
 	});
 }
 
+/**
+ * Renders the fetched 311 request rows into the results table.
+ * Uses destructuring to extract fields from each row object.
+ *
+ * @param {Object[]} rows - Array of request objects from the API.
+ * @param {string} keyword - The keyword that was searched, used in metadata text.
+ */
 function renderRows(rows, keyword) {
 	const resultsBody = document.getElementById("resultsBody");
 	resultsBody.innerHTML = "";
@@ -110,6 +160,9 @@ function renderRows(rows, keyword) {
 	);
 }
 
+/**
+ * Clears the results table and resets status/metadata messages.
+ */
 function clearResults() {
 	document.getElementById("resultsBody").innerHTML = "";
 	setResultsMeta("");
