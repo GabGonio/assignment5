@@ -1,16 +1,7 @@
-const DATASET_ENDPOINT = "https://data.winnipeg.ca/resource/u7f6-5326.json";
-const MAX_RESULTS = 25;
-
-const searchForm = document.getElementById("searchForm");
-const keywordInput = document.getElementById("keyword");
-const keywordError = document.getElementById("keywordError");
-const searchButton = document.getElementById("searchButton");
-const clearButton = document.getElementById("clearButton");
-const statusMessage = document.getElementById("statusMessage");
-const resultsMeta = document.getElementById("resultsMeta");
-const resultsBody = document.getElementById("resultsBody");
-
 function buildApiUrl(keyword) {
+	const DATASET_ENDPOINT = "https://data.winnipeg.ca/resource/u7f6-5326.json";
+	const MAX_RESULTS = 25;
+
 	const safeKeyword = keyword.replace(/'/g, "''");
 	const whereParts = [
 		`lower(subject) LIKE lower('%${safeKeyword}%')`,
@@ -39,22 +30,23 @@ async function fetch311Requests(keyword) {
 }
 
 function setStatus(message, isError = false) {
+	const statusMessage = document.getElementById("statusMessage");
 	statusMessage.textContent = message;
 	statusMessage.classList.toggle("error-text", isError);
 }
 
 function setResultsMeta(message = "") {
-	resultsMeta.textContent = message;
+	document.getElementById("resultsMeta").textContent = message;
 }
 
 function clearKeywordError() {
-	keywordError.textContent = "";
-	keywordInput.setAttribute("aria-invalid", "false");
+	document.getElementById("keywordError").textContent = "";
+	document.getElementById("keyword").setAttribute("aria-invalid", "false");
 }
 
 function showKeywordError(message) {
-	keywordError.textContent = message;
-	keywordInput.setAttribute("aria-invalid", "true");
+	document.getElementById("keywordError").textContent = message;
+	document.getElementById("keyword").setAttribute("aria-invalid", "true");
 }
 
 function formatDate(dateString) {
@@ -66,11 +58,20 @@ function formatDate(dateString) {
 	return parsed.toLocaleDateString();
 }
 
-function renderRows(rows) {
+function formatTimeNow() {
+	return new Date().toLocaleTimeString([], {
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+	});
+}
+
+function renderRows(rows, keyword) {
+	const resultsBody = document.getElementById("resultsBody");
 	resultsBody.innerHTML = "";
 
 	if (rows.length === 0) {
-		setResultsMeta("0 results displayed.");
+		setResultsMeta(`0 results displayed for "${keyword}".`);
 		const emptyRow = document.createElement("tr");
 		const emptyCell = document.createElement("td");
 		emptyCell.colSpan = 4;
@@ -104,53 +105,57 @@ function renderRows(rows) {
 		resultsBody.appendChild(tr);
 	});
 
-	setResultsMeta(`${rows.length} result(s) displayed. Showing most recent first.`);
+	setResultsMeta(
+		`${rows.length} result(s) for "${keyword}". Updated at ${formatTimeNow()}. Showing most recent first.`
+	);
 }
 
 function clearResults() {
-	resultsBody.innerHTML = "";
+	document.getElementById("resultsBody").innerHTML = "";
 	setResultsMeta("");
 	setStatus("Enter a keyword, then click Search.");
 }
 
-keywordInput.addEventListener("input", () => {
-	if (keywordInput.value.trim()) {
+document.getElementById("keyword").addEventListener("input", () => {
+	if (document.getElementById("keyword").value.trim()) {
 		clearKeywordError();
 	}
 });
 
-clearButton.addEventListener("click", () => {
-	searchForm.reset();
+document.getElementById("clearButton").addEventListener("click", () => {
+	document.getElementById("searchForm").reset();
 	clearKeywordError();
 	clearResults();
-	keywordInput.focus();
+	document.getElementById("keyword").focus();
 });
 
-searchForm.addEventListener("submit", async (event) => {
+document.getElementById("searchForm").addEventListener("submit", async (event) => {
 	event.preventDefault();
 
-	const keyword = keywordInput.value.trim();
+	const keyword = document.getElementById("keyword").value.trim();
 	clearKeywordError();
 
 	if (!keyword) {
 		showKeywordError("Keyword is required.");
 		setStatus("Please enter a keyword before searching.", true);
-		keywordInput.focus();
+		document.getElementById("keyword").focus();
 		return;
 	}
 
-	searchButton.disabled = true;
+	document.getElementById("searchButton").disabled = true;
 	setStatus("Loading requests...");
+	setResultsMeta(`Searching for "${keyword}"...`);
 
 	try {
 		const requests = await fetch311Requests(keyword);
-		renderRows(requests);
+		renderRows(requests, keyword);
 		setStatus(`Loaded ${requests.length} request(s).`);
 	} catch (error) {
 		console.error(error);
-		renderRows([]);
+		renderRows([], keyword);
+		setResultsMeta(`Search for "${keyword}" failed. Please try again.`);
 		setStatus("Unable to load data right now. Please try again.", true);
 	} finally {
-		searchButton.disabled = false;
+		document.getElementById("searchButton").disabled = false;
 	}
 });
