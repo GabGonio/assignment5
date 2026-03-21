@@ -8,16 +8,11 @@ function buildApiUrl(keyword) {
 	const DATASET_ENDPOINT = "https://data.winnipeg.ca/resource/u7f6-5326.json";
 	const MAX_RESULTS = 25;
 
-	const safeKeyword = keyword.replace(/'/g, "''");
-	const whereParts = [
-		`lower(subject) LIKE lower('%${safeKeyword}%')`,
-		"subject IS NOT NULL",
-	];
-
 	const apiUrl =
 		`${DATASET_ENDPOINT}?` +
 		`$select=subject,reason,open_date,case_status&` +
-		`$where=${whereParts.join(" AND ")}&` +
+		`$where=subject IS NOT NULL&` +
+		`$q=${keyword}&` +
 		`$order=open_date DESC&` +
 		`$limit=${MAX_RESULTS}`;
 
