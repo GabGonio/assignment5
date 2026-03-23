@@ -28,7 +28,16 @@ function buildApiUrl(keyword) {
  */
 async function fetch311Requests(keyword) {
 	const url = buildApiUrl(keyword);
-	const response = await fetch(url);
+	const controller = new AbortController();
+	const timeoutMs = 12000;
+	const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+	let response;
+	try {
+		response = await fetch(url, { signal: controller.signal });
+	} finally {
+		clearTimeout(timeoutId);
+	}
 
 	if (!response.ok) {
 		throw new Error(`HTTP error: ${response.status}`);
@@ -201,8 +210,13 @@ document.getElementById("searchForm").addEventListener("submit", async (event) =
 	} catch (error) {
 		console.error(error);
 		renderRows([], keyword);
-		setResultsMeta(`Search for "${keyword}" failed. Please try again.`);
-		setStatus("Unable to load data right now. Please try again.", true);
+		if (error.name === "AbortError") {
+			setResultsMeta(`Search for "${keyword}" timed out. Try another keyword.`);
+			setStatus("Request timed out after 12 seconds. Please try again.", true);
+		} else {
+			setResultsMeta(`Search for "${keyword}" failed. Please try again.`);
+			setStatus("Unable to load data right now. Please try again.", true);
+		}
 	} finally {
 		document.getElementById("searchButton").disabled = false;
 	}
