@@ -24,26 +24,54 @@ function buildApiUrl(keyword) {
  *
  * @param {string} keyword - The keyword to search for in request subjects.
  * @returns {Promise<Object[]>} A promise that resolves to an array of request objects.
- * @throws {Error} If the HTTP response is not OK.
+ * @throws {Error} If the request fails after retry attempts.
  */
 async function fetch311Requests(keyword) {
 	const url = buildApiUrl(keyword);
-	const controller = new AbortController();
-	const timeoutMs = 12000;
-	const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+	const maxAttempts = 2;
 
-	let response;
-	try {
-		response = await fetch(url, { signal: controller.signal });
-	} finally {
-		clearTimeout(timeoutId);
+	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+		const controller = new AbortController();
+		const timeoutMs = 12000;
+		const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+		try {
+			const response = await fetch(url, { signal: controller.signal });
+
+			if (!response.ok) {
+				let details = "";
+				try {
+					details = await response.text();
+				} catch {
+					details = "";
+				}
+
+				const transient = response.status === 429 || response.status >= 500;
+				if (transient && attempt < maxAttempts) {
+					await new Promise((resolve) => setTimeout(resolve, 900));
+					continue;
+				}
+
+				throw new Error(
+					`HTTP ${response.status}${details ? `: ${details.slice(0, 160)}` : ""}`
+				);
+			}
+
+			return await response.json();
+		} catch (error) {
+			const shouldRetryNetwork = error.name !== "AbortError" && attempt < maxAttempts;
+			if (shouldRetryNetwork) {
+				await new Promise((resolve) => setTimeout(resolve, 900));
+				continue;
+			}
+
+			throw error;
+		} finally {
+			clearTimeout(timeoutId);
+		}
 	}
 
-	if (!response.ok) {
-		throw new Error(`HTTP error: ${response.status}`);
-	}
-
-	return response.json();
+	throw new Error("Request failed after retry.");
 }
 
 /**
@@ -214,8 +242,8 @@ document.getElementById("searchForm").addEventListener("submit", async (event) =
 			setResultsMeta(`Search for "${keyword}" timed out. Try another keyword.`);
 			setStatus("Request timed out after 12 seconds. Please try again.", true);
 		} else {
-			setResultsMeta(`Search for "${keyword}" failed. Please try again.`);
-			setStatus("Unable to load data right now. Please try again.", true);
+			setResultsMeta(`Search for "${keyword}" failed.`);
+			setStatus(`Unable to load data right now. ${error.message}`, true);
 		}
 	} finally {
 		document.getElementById("searchButton").disabled = false;
