@@ -236,14 +236,14 @@ document.getElementById("searchForm").addEventListener("submit", async (event) =
 		renderRows(requests, keyword);
 		setStatus(`Loaded ${requests.length} request(s).`);
 	} catch (error) {
-		console.error(error);
+		console.error("Search request failed:", error);
 		renderRows([], keyword);
 		if (error.name === "AbortError") {
 			setResultsMeta(`Search for "${keyword}" timed out. Try another keyword.`);
 			setStatus("Request timed out after 12 seconds. Please try again.", true);
 		} else {
 			setResultsMeta(`Search for "${keyword}" failed.`);
-			setStatus(`Unable to load data right now. ${error.message}`, true);
+			setStatus("Unable to load data right now. Please try again in a moment.", true);
 		}
 	} finally {
 		document.getElementById("searchButton").disabled = false;
